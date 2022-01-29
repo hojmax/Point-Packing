@@ -7,32 +7,45 @@ typedef struct Point {
     float y;
 } Point;
 
-// Returns the gradients of the points.
-Point* get_gradient(Point* points, unsigned int number_of_points, int w, int h,
-                    int border_weight) {
-    Point* gradient = malloc(number_of_points * sizeof(Point));
+// Helper function for adding to the gradient given two points
+void add_point_to_gradient(Point* gradient, Point p1, Point p2, unsigned int i,
+                           float weight) {
+    const float delta_x = p1.x - p2.x;
+    const float delta_y = p1.y - p2.y;
+    const float divisor = pow(delta_x * delta_x + delta_y * delta_y, 3. / 2.);
+    const float g_x = delta_x / divisor;
+    const float g_y = delta_y / divisor;
+    gradient[i].x += g_x * weight;
+    gradient[i].y += g_y * weight;
+}
+
+// Helper function for adding to the gradient given a point and its bounds.
+void add_bounds_to_gradient(Point* gradient, Point* points, unsigned int w,
+                            unsigned int h, unsigned int i,
+                            float border_weight) {
+    gradient[i].x += (1 / ((w - points[i].x) * (w - points[i].x)) -
+                      1 / (points[i].x * points[i].x)) *
+                     border_weight;
+    gradient[i].y += (1 / ((h - points[i].y) * (h - points[i].y)) -
+                      1 / (points[i].y * points[i].y)) *
+                     border_weight;
+}
+
+// Returns the gradient of the points.
+Point* get_gradient(Point* points, unsigned int number_of_points,
+                    unsigned int w, unsigned int h, float border_weight,
+                    Point repel_point, int do_repel, float repel_weight) {
+    Point* gradient = calloc(number_of_points, sizeof(Point));
 #pragma omp parallel for
     for (unsigned int i = 0; i < number_of_points; i++) {
-        gradient[i].x = (1 / ((w - points[i].x) * (w - points[i].x)) -
-                         1 / (points[i].x * points[i].x)) *
-                        border_weight;
-        gradient[i].y = (1 / ((h - points[i].y) * (h - points[i].y)) -
-                         1 / (points[i].y * points[i].y)) *
-                        border_weight;
-    }
-#pragma omp parallel for
-    for (unsigned int i = 0; i < number_of_points; i++) {
+        add_bounds_to_gradient(gradient, points, w, h, i, border_weight);
         for (unsigned int j = 0; j < number_of_points; j++) {
-            if (i == j) continue;
-            const float delta_x = points[j].x - points[i].x;
-            const float delta_y = points[j].y - points[i].y;
-            const float divisor =
-                pow(delta_x * delta_x + delta_y * delta_y, 3. / 2.);
-            const float g_x = delta_x / divisor;
-            const float g_y = delta_y / divisor;
-            gradient[i].x += g_x;
-            gradient[i].y += g_y;
+            if (i != j)
+                add_point_to_gradient(gradient, points[j], points[i], i, 1);
         }
+        if (do_repel)
+            add_point_to_gradient(gradient, repel_point, points[i], i,
+                                  repel_weight);
     }
     return gradient;
 }
@@ -62,11 +75,14 @@ void transform_gradient(Point* gradient, unsigned int number_of_points,
 }
 
 // Updates the point positions in place.
-void update_points(Point* points, unsigned int number_of_points, int w, int h,
-                   int border_weight, float min_border_distance,
-                   float learning_rate, float max_magnitude) {
+void update_points(Point* points, unsigned int number_of_points, unsigned int w,
+                   unsigned int h, float border_weight,
+                   float min_border_distance, float learning_rate,
+                   float max_magnitude, Point repel_point, int do_repel,
+                   float repel_weight) {
     Point* gradient =
-        get_gradient(points, number_of_points, w, h, border_weight);
+        get_gradient(points, number_of_points, w, h, border_weight, repel_point,
+                     do_repel, repel_weight);
     transform_gradient(gradient, number_of_points, learning_rate,
                        max_magnitude);
 #pragma omp parallel for

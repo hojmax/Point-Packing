@@ -16,9 +16,10 @@ h = 800
 number_of_points = 1000
 min_border_distance = 0.01
 border_weight = 250
-learning_rate = 1000
+learning_rate = 800
+repel_weight = 150
 # This translates to a point moving a maximum of 4 pixels per update
-max_magnitude = 4
+max_magnitude = 6
 
 
 def initialize_points():
@@ -28,14 +29,17 @@ def initialize_points():
     ) for i in range(number_of_points)])
 
 
-def update_points(points):
+def update_points(points, mouse_pos, is_mouse_down):
     helpers.update_points(
         byref(points),
         (c_uint)(len(points)),
-        (c_int)(w),
-        (c_int)(h),
-        (c_int)(border_weight),
+        (c_uint)(w),
+        (c_uint)(h),
+        (c_float)(border_weight),
         (c_float)(min_border_distance),
         (c_float)(learning_rate),
         (c_float)(max_magnitude),
+        Point(mouse_pos[0], mouse_pos[1]),
+        (c_int)(is_mouse_down),
+        (c_float)(repel_weight)
     )
