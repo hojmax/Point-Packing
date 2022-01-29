@@ -94,8 +94,3 @@ void update_points(Point* points, unsigned int number_of_points, unsigned int w,
     }
     free(gradient);
 }
-
-// Returns random number between 0 and max_value.
-float random_float(float max_value) {
-    return rand() / (float)(RAND_MAX)*max_value;
-}
