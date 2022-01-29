@@ -15,9 +15,10 @@ w = 800
 h = 800
 number_of_points = 1000
 min_border_distance = 0.01
-border_weight = 1
-learning_rate = 2000
-max_magnitude = 0.001
+border_weight = 250
+learning_rate = 1000
+# This translates to a point moving a maximum of 4 pixels per update
+max_magnitude = 4
 
 
 def initialize_points():

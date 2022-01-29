@@ -51,13 +51,12 @@ void transform_gradient(Point* gradient, unsigned int number_of_points,
                         float learning_rate, float max_magnitude) {
 #pragma omp parallel for
     for (unsigned int i = 0; i < number_of_points; i++) {
+        gradient[i].x *= learning_rate;
+        gradient[i].y *= learning_rate;
         const float magnitude = get_magnitude(gradient[i]);
-        if (magnitude <= max_magnitude) {
-            gradient[i].x *= learning_rate;
-            gradient[i].y *= learning_rate;
-        } else {
-            gradient[i].x *= learning_rate * max_magnitude / magnitude;
-            gradient[i].y *= learning_rate * max_magnitude / magnitude;
+        if (magnitude >= max_magnitude) {
+            gradient[i].x *= max_magnitude / magnitude;
+            gradient[i].y *= max_magnitude / magnitude;
         }
     }
 }

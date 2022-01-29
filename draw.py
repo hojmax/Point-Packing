@@ -16,7 +16,7 @@ def drawPoints(points, screen):
 def main():
     pygame.init()
     screen = pygame.display.set_mode((w, h))
-    pygame.display.set_caption('Point Simulation')
+    pygame.display.set_caption('Point Packing')
 
     while 1:
         for event in pygame.event.get():
