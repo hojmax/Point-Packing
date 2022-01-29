@@ -18,7 +18,7 @@ min_border_distance = 0.01
 border_weight = 250
 learning_rate = 800
 repel_weight = 150
-# This translates to a point moving a maximum of 4 pixels per update
+# This translates to a point moving a maximum of 6 pixels per update
 max_magnitude = 6
 
 
