@@ -61,6 +61,7 @@ Point* get_gradient(Point* points, unsigned int number_of_points, unsigned int w
                 gradient[i].y += private_gradient[i].y;
             }
         }
+        free(private_gradient);
     }
     return gradient;
 }
