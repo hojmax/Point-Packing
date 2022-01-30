@@ -50,14 +50,14 @@ def initialize_points():
 def update_points(points, mouse_pos, is_mouse_down):
     helpers.update_points(
         byref(points),
-        (c_uint)(len(points)),
-        (c_uint)(setting.w),
-        (c_uint)(setting.h),
-        (c_float)(setting.border_weight),
-        (c_float)(setting.min_border_distance),
-        (c_float)(setting.learning_rate),
-        (c_float)(setting.max_magnitude),
+        c_uint(len(points)),
+        c_uint(setting.w),
+        c_uint(setting.h),
+        c_float(setting.border_weight),
+        c_float(setting.min_border_distance),
+        c_float(setting.learning_rate),
+        c_float(setting.max_magnitude),
         Point(mouse_pos[0], mouse_pos[1]),
-        (c_int)(is_mouse_down),
-        (c_float)(setting.repel_weight)
+        c_int(is_mouse_down),
+        c_float(setting.repel_weight)
     )
