@@ -11,35 +11,53 @@ class Point(Structure):
         self.y = y
 
 
-w = 800
-h = 800
-number_of_points = 1000
-min_border_distance = 0.01
-border_weight = 250
-learning_rate = 800
-repel_weight = 150
-# This translates to a point moving a maximum of 6 pixels per update
-max_magnitude = 6
+class Setting_1():
+    w = 800
+    h = 800
+    number_of_points = 1000
+    min_border_distance = 0.01
+    border_weight = 250
+    learning_rate = 800
+    repel_weight = 150
+    max_magnitude = 6
+    point_radius = 3
+
+
+class Setting_2():
+    w = 800
+    h = 800
+    number_of_points = 20
+    min_border_distance = 0.01
+    border_weight = 1
+    learning_rate = 100000
+    repel_weight = 20
+    max_magnitude = 6
+    point_radius = 6
+
+
+setting = Setting_1()
 
 
 def initialize_points():
-    return (Point * number_of_points)(*[Point(
-        random.uniform(min_border_distance, w - min_border_distance),
-        random.uniform(min_border_distance, h - min_border_distance)
-    ) for i in range(number_of_points)])
+    return (Point * setting.number_of_points)(*[Point(
+        random.uniform(setting.min_border_distance,
+                       setting.w - setting.min_border_distance),
+        random.uniform(setting.min_border_distance,
+                       setting.h - setting.min_border_distance)
+    ) for i in range(setting.number_of_points)])
 
 
 def update_points(points, mouse_pos, is_mouse_down):
     helpers.update_points(
         byref(points),
         (c_uint)(len(points)),
-        (c_uint)(w),
-        (c_uint)(h),
-        (c_float)(border_weight),
-        (c_float)(min_border_distance),
-        (c_float)(learning_rate),
-        (c_float)(max_magnitude),
+        (c_uint)(setting.w),
+        (c_uint)(setting.h),
+        (c_float)(setting.border_weight),
+        (c_float)(setting.min_border_distance),
+        (c_float)(setting.learning_rate),
+        (c_float)(setting.max_magnitude),
         Point(mouse_pos[0], mouse_pos[1]),
         (c_int)(is_mouse_down),
-        (c_float)(repel_weight)
+        (c_float)(setting.repel_weight)
     )
