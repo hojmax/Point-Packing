@@ -1,4 +1,3 @@
-from ast import Return
 from points import initialize_points, update_points, setting
 from pygame.locals import *
 import pygame
