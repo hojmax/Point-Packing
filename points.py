@@ -35,6 +35,18 @@ class Setting_2():
     point_radius = 6
 
 
+class Setting_3():
+    w = 800
+    h = 800
+    number_of_points = 4
+    min_border_distance = 0.01
+    border_weight = 1
+    learning_rate = 400000
+    repel_weight = 10
+    max_magnitude = 12
+    point_radius = 6
+
+
 setting = Setting_1()
 
 
