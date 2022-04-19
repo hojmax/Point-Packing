@@ -11,6 +11,7 @@ Here **p** is some list of points of length **n**. Each point stores its **x** a
 Below you can see the (locally) optimal packing with **n=20**, **α=1** and **w=h=800**:
 
 ![eq](images/20points.png)
+
 Or a packing with **n=1000**, **α=250** and **w=h=800**:
 
 ![eq](images/1000points.png)
