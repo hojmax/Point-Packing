@@ -16,13 +16,13 @@ Here $p$ is some list of points of length $n$. Each point stores its $x$ and $y$
 Below you can see the (locally) optimal packing with $n=20$, $\alpha=1$ and $w=h=800$:
 
 <center>
-<img src="20points.png" alt="drawing" width="300"/>
+<img src="images/20points.png" alt="drawing" width="300"/>
 </center>
 
 Or a packing with $n=1000$, $\alpha=250$ and $w=h=800$:
 
 <center>
-<img src="1000points.png" alt="drawing" width="300"/>
+<img src="images/1000points.png" alt="drawing" width="300"/>
 </center>
 
 It is visually intuitive how $\alpha$ corresponds to the amount 'repulsion' the borders enforce on the points. 
