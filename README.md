@@ -1,6 +1,8 @@
 # Point Packing
 ## 📝 Description
-In this project i use gradient descent to find the optimal 'packing' of points confined to a rectangular 2D container. I define this optimal packing as minimizing the distance to all other points and the borders. On the basis of this definition i formulate the following loss function (Sorry to light theme users 😊 ): 
+In this project i use gradient descent to find the optimal 'packing' of points confined to a rectangular 2D container. I define this optimal packing as minimizing the distance to all other points and the borders. On the basis of this definition i formulate the following loss function[^1] (Sorry to light theme users 😊): 
+
+[^1]: I am aware that the loss function is not strictly optimizing my stated definition. It does however give me a good way to formulate the problem. 
 
 ![eq](images/eq1.png)
 
