@@ -22,7 +22,7 @@ It is visually intuitive how **α** corresponds to the amount 'repulsion' the bo
 In the second gif you also see repulsion from mouse click. This is basically implemented by treating the mouse coordinate as any other point, except you add a weight to its contribution to the loss function. The magnitude of the weight then controles the strength of the repulsion.
 
 ## 🏗 Implementation
-In order to optimize the defined loss function, you simply update the point positions using the gradient. This computation is done in C with openmp for parallelization. The visualization is done in Python with PyGame.
+In order to optimize the defined loss function, you simply update the point positions using the gradient. This computation is done in C with OpenMP for parallelization. The visualization is done in Python with PyGame.
 
 ## 🏄‍♂️ Usage
 To use the project run `
