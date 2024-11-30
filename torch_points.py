@@ -4,6 +4,9 @@ import os
 import numpy as np
 import math
 import wandb
+import matplotlib
+
+matplotlib.use("Agg")  # Switch to non-interactive backend
 
 W = 800
 H = 800
@@ -11,25 +14,32 @@ N = 1000
 ALPHA = 250
 
 
-def plot_points(p_x, p_y, loss=None, save=False, show=True):
+def plot_points(p_x, p_y, loss=None, save=False, show=False, params=None):
     plt.figure(figsize=(8, 8))
     plt.scatter(p_x.cpu().detach(), p_y.cpu().detach(), alpha=1, s=7)
     plt.xlabel("X")
     plt.ylabel("Y")
-    title = "Point Packing"
+
+    title = f"Point Packing (N={len(p_x)})"
     if loss is not None:
-        title += f" (Loss: {loss:.6f})"
+        title += f"\nLoss: {loss:.6f}"
+    if params:
+        param_text = f"\nIterations: {params['iterations']}, Min LR: {params['min_lr']:.2f}, Peak LR: {params['peak_lr']:.1f}"
+        title += param_text
+
     plt.title(title)
     plt.xlim(0, W)
     plt.ylim(0, H)
 
     if save:
         os.makedirs("imgs", exist_ok=True)
-        filename = f"optimized_points_{loss:.4f}.png"
+        filename = f"sweep_optimized_points_{loss:.4f}.png"
         plt.savefig(os.path.join("imgs", filename))
+        plt.close()
 
     if show:
         plt.show()
+        plt.close()
 
 
 def get_loss(x, y, alpha, w, h):
@@ -119,10 +129,18 @@ def main(
 ):
     losses = []
     best_loss = float("inf")
-    best_x = None
-    best_y = None
 
-    for _ in range(10):
+    # Initialize with first run
+    x, y = get_points(N, W, H, device)
+    lrs = get_lrs(iterations, peak_lr, min_lr)
+    run_losses = optimize_points(x, y, ALPHA, W, H, lrs, iterations)
+    best_loss = run_losses[-1]
+    best_x = x.clone()
+    best_y = y.clone()
+    losses.append(best_loss)
+
+    # Run remaining iterations
+    for _ in range(9):  # 9 more times for total of 10
         x, y = get_points(N, W, H, device)
         lrs = get_lrs(iterations, peak_lr, min_lr)
         run_losses = optimize_points(x, y, ALPHA, W, H, lrs, iterations)
@@ -137,8 +155,12 @@ def main(
     avg_loss = sum(losses) / len(losses)
 
     # Save the best configuration
-    save_points(best_x, best_y, f"optimized_points_{best_loss:.4f}.npz")
-    plot_points(best_x, best_y, best_loss, save=True, show=False)
+    if best_x is not None and best_y is not None:
+        params = {"iterations": iterations, "min_lr": min_lr, "peak_lr": peak_lr}
+        save_points(best_x, best_y, f"sweep_optimized_points_{best_loss:.4f}.npz")
+        plot_points(best_x, best_y, best_loss, save=True, show=False, params=params)
+    else:
+        print("Warning: No valid points found to save")
 
     return avg_loss
 
@@ -149,8 +171,8 @@ def sweep():
         "metric": {"name": "avg_loss", "goal": "minimize"},
         "parameters": {
             "iterations": {"min": 50, "max": 500},
-            "min_lr": {"min": 0.1, "max": 10.0},
-            "peak_lr": {"min": 100, "max": 2000},
+            "min_lr": {"min": 0.1, "max": 6.0},
+            "peak_lr": {"min": 100, "max": 1200},
         },
     }
 
@@ -167,7 +189,7 @@ def sweep():
 
         wandb.log({"avg_loss": avg_loss})
 
-    wandb.agent(sweep_id, sweep_train, count=20)
+    wandb.agent(sweep_id, sweep_train, count=200)
 
 
 if __name__ == "__main__":

@@ -4,3 +4,4 @@ benchmark.py
 imgs
 points
 .DS_Store
+wandb
