@@ -203,6 +203,7 @@ def load_points(path: str):
 def train_further(path: str):
     # sweep()
     p_x, p_y = load_points(path)
+    print("Initial loss: ", get_loss(p_x, p_y, ALPHA, W, H))
 
     # Use plot_points function instead of manual plotting
     plot_points(p_x, p_y, show=True)
@@ -212,9 +213,8 @@ def train_further(path: str):
     losses = optimize_points(p_x, p_y, ALPHA, W, H, lrs, iterations)
     plot_losses(losses)
     plot_lr_schedule(lrs)
-    print("Initial loss: ", losses[0])
     print(f"Final loss: {losses[-1]}")
 
 
 if __name__ == "__main__":
-    train_further("points/sweep_optimized_points_5613.0186.npz")
+    train_further("points/optimized_points_5612.9111.npz")
