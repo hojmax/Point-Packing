@@ -13,17 +13,10 @@ def plot_points(p_x, p_y):
     plt.show()
 
 
-def get_squared_differences(x: torch.Tensor) -> torch.Tensor:
-    differences = x.unsqueeze(0) - x.unsqueeze(1)
-    upper_triangular = torch.triu(differences, diagonal=1)
-    return upper_triangular
-
-
 def get_loss(x, y, alpha, w, h):
-    delta_x = get_squared_differences(x)
-    delta_y = get_squared_differences(y)
-    distances = torch.sqrt(torch.square(delta_x) + torch.square(delta_y))
-    reciprocal_sum = torch.sum(1.0 / distances[distances > 0])
+    positions = torch.stack([x, y], dim=1)  # Shape (N, 2)
+    distances = torch.pdist(positions)
+    reciprocal_sum = torch.sum(1.0 / distances)
     border = torch.sum(1 / x + 1 / y + 1 / (w - x) + 1 / (h - y))
     loss = alpha * border + reciprocal_sum
     return loss
@@ -39,9 +32,9 @@ def plot_loss(losses):
 
 
 def optimize_points(x, y, alpha, w, h):
-    optimizer = torch.optim.SGD([x, y], lr=0.05)
+    optimizer = torch.optim.Adam([x, y], lr=1)
     losses = []
-    for _ in range(2000):
+    for _ in range(10000):
         optimizer.zero_grad()
         loss = get_loss(x, y, alpha, w, h)
         losses.append(loss.item())
@@ -63,10 +56,10 @@ def get_points(n, w, h, device):
 
 
 if __name__ == "__main__":
-    w = 800
-    h = 800
-    n = 1000
-    alpha = 250
+    w = 600
+    h = 600
+    n = 20
+    alpha = 1
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
