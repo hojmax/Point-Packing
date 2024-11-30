@@ -10,7 +10,7 @@ def plot_points(p_x, p_y, loss=None, save=False):
     plt.scatter(p_x.cpu().detach(), p_y.cpu().detach(), alpha=1, s=7)
     plt.xlabel("X")
     plt.ylabel("Y")
-    title = "Random Points"
+    title = "Point Packing"
     if loss is not None:
         title += f" (Loss: {loss:.6f})"
     plt.title(title)
@@ -34,16 +34,17 @@ def get_loss(x, y, alpha, w, h):
     return loss
 
 
-def plot_loss(losses):
+def plot_loss(losses, show_plateau=False):
     plt.figure(figsize=(10, 5))
     plt.plot(losses)
     plt.xlabel("Iteration")
     plt.ylabel("Loss")
     plt.yscale("log")
     plt.title("Loss Over Time")
-    plt.ylim(
-        min(losses) - 2, min(losses) + 2
-    )  # Adjust y-axis to focus on the flat part
+    if show_plateau:
+        plt.ylim(
+            min(losses) - 2, min(losses) + 2
+        )  # Adjust y-axis to focus on the flat part
     plt.show()
 
 
@@ -99,9 +100,7 @@ def get_points(n, w, h, device):
 
 
 def save_points(x, y, filename="optimized_points.npz"):
-    # Create points directory if it doesn't exist
     os.makedirs("points", exist_ok=True)
-
     points = torch.stack([x.cpu().detach(), y.cpu().detach()], dim=1).numpy()
     np.savez(os.path.join("points", filename), points=points)
 
@@ -113,7 +112,7 @@ if __name__ == "__main__":
     alpha = 250
     iterations = 100
     min_lr = 0.5
-    peak_lr = 800
+    peak_lr = 900
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     x, y = get_points(n, w, h, device)
