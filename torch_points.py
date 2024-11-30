@@ -4,14 +4,23 @@ import os
 import numpy as np
 
 
-def plot_points(p_x, p_y):
+def plot_points(p_x, p_y, loss=None, save=False):
     plt.figure(figsize=(8, 8))
     plt.scatter(p_x.cpu().detach(), p_y.cpu().detach(), alpha=1, s=7)
     plt.xlabel("X")
     plt.ylabel("Y")
-    plt.title("Random Points")
+    title = "Random Points"
+    if loss is not None:
+        title += f" (Loss: {loss:.6f})"
+    plt.title(title)
     plt.xlim(0, w)
     plt.ylim(0, h)
+
+    if save:
+        os.makedirs("imgs", exist_ok=True)
+        filename = f"optimized_points_{loss:.4f}.png"
+        plt.savefig(os.path.join("imgs", filename))
+
     plt.show()
 
 
@@ -35,7 +44,7 @@ def plot_loss(losses):
 
 
 def optimize_points(x, y, alpha, w, h, iterations=1000):
-    optimizer = torch.optim.SGD([x, y], lr=0.1)
+    optimizer = torch.optim.SGD([x, y], lr=1)
     losses = []
     for _ in range(iterations):
         optimizer.zero_grad()
@@ -51,6 +60,7 @@ def optimize_points(x, y, alpha, w, h, iterations=1000):
     plot_loss(losses)
     print(f"Initial loss: {losses[0]}")
     print(f"Final loss: {losses[-1]}")
+    return losses[-1]
 
 
 def get_points(n, w, h, device):
@@ -64,16 +74,11 @@ def get_points(n, w, h, device):
 
 
 def save_points(x, y, filename="optimized_points.npz"):
+    # Create points directory if it doesn't exist
+    os.makedirs("points", exist_ok=True)
+
     points = torch.stack([x.cpu().detach(), y.cpu().detach()], dim=1).numpy()
-    np.savez(filename, points=points)
-
-
-def load_points(filename="optimized_points.npz", device=None):
-    if os.path.exists(filename):
-        data = np.load(filename)
-        points = torch.from_numpy(data["points"]).to(device)
-        return points[:, 0].requires_grad_(), points[:, 1].requires_grad_()
-    return None
+    np.savez(os.path.join("points", filename), points=points)
 
 
 if __name__ == "__main__":
@@ -83,20 +88,12 @@ if __name__ == "__main__":
     alpha = 250
     iterations = 100
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
 
-    loaded_points = load_points(device=device)
+    x, y = get_points(n, w, h, device)
 
-    if loaded_points is not None:
-        x, y = loaded_points
-        print("Loaded optimized points from file")
-    else:
-        x, y = get_points(n, w, h, device)
-        print("Generated new random points")
+    plot_points(x, y, save=False)
 
-    plot_points(x, y)
+    final_loss = optimize_points(x, y, alpha, w, h, iterations)
+    save_points(x, y, f"optimized_points_{final_loss:.4f}.npz")
 
-    optimize_points(x, y, alpha, w, h, iterations)
-    save_points(x, y)
-
-    plot_points(x, y)
+    plot_points(x, y, final_loss, save=True)
