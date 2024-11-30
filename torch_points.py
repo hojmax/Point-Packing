@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import math
+import wandb
 
 W = 800
 H = 800
@@ -116,13 +117,58 @@ def main(
     peak_lr: float = 900,
     device: torch.device = torch.device("cpu"),
 ):
-    x, y = get_points(N, W, H, device)
-    lrs = get_lrs(iterations, peak_lr, min_lr)
-    losses = optimize_points(x, y, ALPHA, W, H, lrs, iterations)
-    final_loss = losses[-1]
-    save_points(x, y, f"optimized_points_{final_loss:.4f}.npz")
-    plot_points(x, y, final_loss, save=True, show=False)
+    losses = []
+    best_loss = float("inf")
+    best_x = None
+    best_y = None
+
+    for _ in range(10):
+        x, y = get_points(N, W, H, device)
+        lrs = get_lrs(iterations, peak_lr, min_lr)
+        run_losses = optimize_points(x, y, ALPHA, W, H, lrs, iterations)
+        final_loss = run_losses[-1]
+        losses.append(final_loss)
+
+        if final_loss < best_loss:
+            best_loss = final_loss
+            best_x = x.clone()
+            best_y = y.clone()
+
+    avg_loss = sum(losses) / len(losses)
+
+    # Save the best configuration
+    save_points(best_x, best_y, f"optimized_points_{best_loss:.4f}.npz")
+    plot_points(best_x, best_y, best_loss, save=True, show=False)
+
+    return avg_loss
+
+
+def sweep():
+    sweep_config = {
+        "method": "random",
+        "metric": {"name": "avg_loss", "goal": "minimize"},
+        "parameters": {
+            "iterations": {"min": 50, "max": 500},
+            "min_lr": {"min": 0.1, "max": 10.0},
+            "peak_lr": {"min": 100, "max": 2000},
+        },
+    }
+
+    sweep_id = wandb.sweep(sweep_config, project="point_packing")
+
+    def sweep_train():
+        wandb.init()
+
+        avg_loss = main(
+            iterations=int(wandb.config.iterations),
+            min_lr=wandb.config.min_lr,
+            peak_lr=wandb.config.peak_lr,
+        )
+
+        wandb.log({"avg_loss": avg_loss})
+
+    wandb.agent(sweep_id, sweep_train, count=20)
 
 
 if __name__ == "__main__":
-    main()
+    sweep()
