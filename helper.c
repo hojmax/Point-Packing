@@ -1,111 +1,46 @@
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+import torch import matplotlib.pyplot as plt
 
-typedef struct Point {
-    float x;
-    float y;
-} Point;
+    def plot_points(p_x, p_y) :plt.figure(figsize =(8, 8))
+                                                        plt.scatter(p_x.cpu().detach(), p_y.cpu().detach(), alpha = 0.5)
+                                                                                                                plt.xlabel("X")
+                                                                                                                               plt.ylabel("Y")
+                                                                                                                                              plt.title("Random Points")
+                                                                                                                                                            plt.xlim(0, w)
+                                                                                                                                                                            plt.ylim(0, h)
+                                                                                                                                                                                            plt.show()
 
-// Helper function for adding to the gradient given two points
-void add_point_to_gradient(Point* gradient, Point p1, Point p2, unsigned int i, float weight,
-    unsigned int j, int add_both_directions)
-{
-    const float delta_x = p1.x - p2.x;
-    const float delta_y = p1.y - p2.y;
-    const float divisor = pow(delta_x * delta_x + delta_y * delta_y, 3. / 2.);
-    const float g_x = delta_x / divisor * weight;
-    const float g_y = delta_y / divisor * weight;
-    gradient[i].x += g_x;
-    gradient[i].y += g_y;
-    if (!add_both_directions)
-        return;
-    gradient[j].x -= g_x;
-    gradient[j].y -= g_y;
-}
+                                                                                                                                                                                                def get_squared_differences(x:torch.Tensor)->torch.Tensor:differences = x.unsqueeze(0) - x.unsqueeze(1)
+                                                                                                                                                                                                                                                                                                         upper_triangular = torch.triu(differences, diagonal = 1) return upper_triangular
 
-// Helper function for adding to the gradient given a point and its bounds.
-void add_bounds_to_gradient(Point* gradient, Point* points, unsigned int w, unsigned int h,
-    unsigned int i, float border_weight)
-{
-    gradient[i].x += (1 / ((w - points[i].x) * (w - points[i].x)) - 1 / (points[i].x * points[i].x))
-        * border_weight;
-    gradient[i].y += (1 / ((h - points[i].y) * (h - points[i].y)) - 1 / (points[i].y * points[i].y))
-        * border_weight;
-}
+                                                                                                                                                                                                                                                                                                                                       def get_loss(x, y, alpha, w, h) :delta_x = get_squared_differences(x)
+                                                                                                                                                                                                                                                                                                                                                        delta_y = get_squared_differences(y)
+                                                                                                                                                                                                                                                                                                                                                                                              distances = torch.sqrt(torch.square(delta_x) + torch.square(delta_y))
+                                                                                                                                                                                                                                                                                                                                                                                                                                      reciprocal_sum = torch.sum(1.0 / distances[distances> 0])
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                     border = torch.sum(1 / x + 1 / y + 1 /(w - x) + 1 /(h - y))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                         loss = alpha * border + reciprocal_sum return loss
 
-// Returns the gradient of the points.
-Point* get_gradient(Point* points, unsigned int number_of_points, unsigned int w, unsigned int h,
-    float border_weight, Point repel_point, int do_repel, float repel_weight)
-{
-    Point* gradient = calloc(number_of_points, sizeof(Point));
-#pragma omp parallel for
-    for (unsigned int i = 0; i < number_of_points; i++) {
-        add_bounds_to_gradient(gradient, points, w, h, i, border_weight);
-        if (do_repel)
-            add_point_to_gradient(gradient, repel_point, points[i], i, repel_weight, 0, 0);
-    }
-#pragma omp parallel
-    {
-        Point* private_gradient = calloc(number_of_points, sizeof(Point));
-#pragma omp for
-        for (unsigned int i = 0; i < number_of_points; i++) {
-            for (unsigned int j = i + 1; j < number_of_points; j++) {
-                add_point_to_gradient(private_gradient, points[j], points[i], i, 1, j, 1);
-            }
-        }
-#pragma omp critical
-        {
-            for (unsigned int i = 0; i < number_of_points; i++) {
-                gradient[i].x += private_gradient[i].x;
-                gradient[i].y += private_gradient[i].y;
-            }
-        }
-        free(private_gradient);
-    }
-    return gradient;
-}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                 def plot_loss(losses) :plt.figure(figsize =(10, 5))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 plt.plot(losses)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              plt.xlabel("Iteration")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             plt.ylabel("Loss")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            plt.title("Loss Over Time")
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          plt.show()
 
-// Returns clamped value of d between min and max.
-float clamp(float d, float min, float max)
-{
-    const float t = d < min ? min : d;
-    return t > max ? max : t;
-}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              def optimize_points(x, y, alpha, w, h) :optimizer = torch.optim.Adam([x, y], lr = 1) losses =[] for _ in range(2000) :optimizer.zero_grad() loss = get_loss(x, y, alpha, w, h) losses.append(loss.item()) loss.backward() optimizer.step()
 
-// Returns the magnitude of a vector (Reusing the point struct).
-float get_magnitude(Point p) { return sqrt(p.x * p.x + p.y * p.y); }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           epsilon = 1e-1 with torch.no_grad() :x.clamp_(epsilon, w - epsilon) y.clamp_(epsilon, h - epsilon)
 
-// Limits the magnitude of the gradient and applies the learning rate.
-void transform_gradient(
-    Point* gradient, unsigned int number_of_points, float learning_rate, float max_magnitude)
-{
-#pragma omp parallel for
-    for (unsigned int i = 0; i < number_of_points; i++) {
-        gradient[i].x *= learning_rate;
-        gradient[i].y *= learning_rate;
-        const float magnitude = get_magnitude(gradient[i]);
-        if (magnitude >= max_magnitude) {
-            gradient[i].x *= max_magnitude / magnitude;
-            gradient[i].y *= max_magnitude / magnitude;
-        }
-    }
-}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            plot_points(x, y)
 
-// Updates the point positions in place.
-void update_points(Point* points, unsigned int number_of_points, unsigned int w, unsigned int h,
-    float border_weight, float min_border_distance, float learning_rate, float max_magnitude,
-    Point repel_point, int do_repel, float repel_weight)
-{
-    Point* gradient = get_gradient(
-        points, number_of_points, w, h, border_weight, repel_point, do_repel, repel_weight);
-    transform_gradient(gradient, number_of_points, learning_rate, max_magnitude);
-#pragma omp parallel for
-    for (unsigned int i = 0; i < number_of_points; i++) {
-        points[i].x
-            = clamp(points[i].x - gradient[i].x, min_border_distance, w - min_border_distance);
-        points[i].y
-            = clamp(points[i].y - gradient[i].y, min_border_distance, h - min_border_distance);
-    }
-    free(gradient);
-}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            plot_loss(losses)
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                def get_points(n, w, h, device) :x =(torch.rand(n, dtype = torch.float32, device = device) * w).requires_grad_() y =(torch.rand(n, dtype = torch.float32, device = device) * h).requires_grad_() return x, y
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           if __name__ == "__main__" :w = 800 h = 800 n = 1000 alpha = 250 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") print(f "Using device: {device}")
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           x,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       y = get_points(n, w, h, device) plot_points(x, y)
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       optimize_points(x, y, alpha, w, h)
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           plot_points(x, y)
