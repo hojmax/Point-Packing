@@ -4,6 +4,11 @@ import os
 import numpy as np
 import math
 
+W = 800
+H = 800
+N = 1000
+ALPHA = 250
+
 
 def plot_points(p_x, p_y, loss=None, save=False):
     plt.figure(figsize=(8, 8))
@@ -14,8 +19,8 @@ def plot_points(p_x, p_y, loss=None, save=False):
     if loss is not None:
         title += f" (Loss: {loss:.6f})"
     plt.title(title)
-    plt.xlim(0, w)
-    plt.ylim(0, h)
+    plt.xlim(0, W)
+    plt.ylim(0, H)
 
     if save:
         os.makedirs("imgs", exist_ok=True)
@@ -106,23 +111,19 @@ def save_points(x, y, filename="optimized_points.npz"):
 
 
 if __name__ == "__main__":
-    w = 800
-    h = 800
-    n = 1000
-    alpha = 250
     iterations = 100
     min_lr = 0.5
     peak_lr = 900
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    x, y = get_points(n, w, h, device)
+    x, y = get_points(N, W, H, device)
     lrs = get_lrs(iterations, peak_lr, min_lr)
     print(lrs)
     print(len(lrs))
     plot_points(x, y, save=False)
     plot_lr_schedule(lrs)
 
-    final_loss = optimize_points(x, y, alpha, w, h, lrs, iterations)
+    final_loss = optimize_points(x, y, ALPHA, W, H, lrs, iterations)
     save_points(x, y, f"optimized_points_{final_loss:.4f}.npz")
 
     plot_points(x, y, final_loss, save=True)
