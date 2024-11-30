@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+import math
 
 
 def plot_points(p_x, p_y, loss=None, save=False):
@@ -40,13 +41,39 @@ def plot_loss(losses):
     plt.ylabel("Loss")
     plt.yscale("log")
     plt.title("Loss Over Time")
+    plt.ylim(
+        min(losses) - 2, min(losses) + 2
+    )  # Adjust y-axis to focus on the flat part
     plt.show()
 
 
-def optimize_points(x, y, alpha, w, h, iterations=1000):
-    optimizer = torch.optim.SGD([x, y], lr=1)
+def plot_lr_schedule(lrs: list[float]):
+    plt.figure(figsize=(10, 5))
+    plt.plot(lrs)
+    plt.xlabel("Iteration")
+    plt.ylabel("Learning Rate")
+    plt.title("Learning Rate Schedule")
+    plt.show()
+
+
+def get_lrs(iterations: int, peak_lr: float, min_lr: float):
+    lrs = []
+    for i in range(iterations):
+        progress = i / (iterations - 1)
+        lr = min_lr + (peak_lr - min_lr) * math.sin(math.pi * progress)
+        lrs.append(lr)
+
+    return lrs
+
+
+def optimize_points(x, y, alpha, w, h, lrs: list[float], iterations: int):
+    optimizer = torch.optim.SGD([x, y])
     losses = []
-    for _ in range(iterations):
+
+    for i in range(iterations):
+        for param_group in optimizer.param_groups:
+            param_group["lr"] = lrs[i]
+
         optimizer.zero_grad()
         loss = get_loss(x, y, alpha, w, h)
         losses.append(loss.item())
@@ -58,8 +85,6 @@ def optimize_points(x, y, alpha, w, h, iterations=1000):
             y.clamp_(1, h - 1)
 
     plot_loss(losses)
-    print(f"Initial loss: {losses[0]}")
-    print(f"Final loss: {losses[-1]}")
     return losses[-1]
 
 
@@ -87,13 +112,18 @@ if __name__ == "__main__":
     n = 1000
     alpha = 250
     iterations = 100
+    min_lr = 0.5
+    peak_lr = 800
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     x, y = get_points(n, w, h, device)
-
+    lrs = get_lrs(iterations, peak_lr, min_lr)
+    print(lrs)
+    print(len(lrs))
     plot_points(x, y, save=False)
+    plot_lr_schedule(lrs)
 
-    final_loss = optimize_points(x, y, alpha, w, h, iterations)
+    final_loss = optimize_points(x, y, alpha, w, h, lrs, iterations)
     save_points(x, y, f"optimized_points_{final_loss:.4f}.npz")
 
     plot_points(x, y, final_loss, save=True)
