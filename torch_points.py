@@ -10,7 +10,7 @@ N = 1000
 ALPHA = 250
 
 
-def plot_points(p_x, p_y, loss=None, save=False):
+def plot_points(p_x, p_y, loss=None, save=False, show=True):
     plt.figure(figsize=(8, 8))
     plt.scatter(p_x.cpu().detach(), p_y.cpu().detach(), alpha=1, s=7)
     plt.xlabel("X")
@@ -27,7 +27,8 @@ def plot_points(p_x, p_y, loss=None, save=False):
         filename = f"optimized_points_{loss:.4f}.png"
         plt.savefig(os.path.join("imgs", filename))
 
-    plt.show()
+    if show:
+        plt.show()
 
 
 def get_loss(x, y, alpha, w, h):
@@ -90,8 +91,7 @@ def optimize_points(x, y, alpha, w, h, lrs: list[float], iterations: int):
             x.clamp_(1, w - 1)
             y.clamp_(1, h - 1)
 
-    plot_loss(losses)
-    return losses[-1]
+    return losses
 
 
 def get_points(n, w, h, device):
@@ -110,20 +110,19 @@ def save_points(x, y, filename="optimized_points.npz"):
     np.savez(os.path.join("points", filename), points=points)
 
 
-if __name__ == "__main__":
-    iterations = 100
-    min_lr = 0.5
-    peak_lr = 900
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+def main(
+    iterations: int = 100,
+    min_lr: float = 0.5,
+    peak_lr: float = 900,
+    device: torch.device = torch.device("cpu"),
+):
     x, y = get_points(N, W, H, device)
     lrs = get_lrs(iterations, peak_lr, min_lr)
-    print(lrs)
-    print(len(lrs))
-    plot_points(x, y, save=False)
-    plot_lr_schedule(lrs)
-
-    final_loss = optimize_points(x, y, ALPHA, W, H, lrs, iterations)
+    losses = optimize_points(x, y, ALPHA, W, H, lrs, iterations)
+    final_loss = losses[-1]
     save_points(x, y, f"optimized_points_{final_loss:.4f}.npz")
+    plot_points(x, y, final_loss, save=True, show=False)
 
-    plot_points(x, y, final_loss, save=True)
+
+if __name__ == "__main__":
+    main()
