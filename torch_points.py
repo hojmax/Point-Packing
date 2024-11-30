@@ -6,7 +6,7 @@ import math
 import wandb
 import matplotlib
 
-matplotlib.use("Agg")  # Switch to non-interactive backend
+# matplotlib.use("Agg")  # Switch to non-interactive backend
 
 W = 800
 H = 800
@@ -39,7 +39,6 @@ def plot_points(p_x, p_y, loss=None, save=False, show=False, params=None):
 
     if show:
         plt.show()
-        plt.close()
 
 
 def get_loss(x, y, alpha, w, h):
@@ -51,7 +50,7 @@ def get_loss(x, y, alpha, w, h):
     return loss
 
 
-def plot_loss(losses, show_plateau=False):
+def plot_losses(losses, show_plateau=False):
     plt.figure(figsize=(10, 5))
     plt.plot(losses)
     plt.xlabel("Iteration")
@@ -166,6 +165,7 @@ def main(
 
 
 def sweep():
+    matplotlib.use("Agg")  # Set non-interactive backend only for sweeps
     sweep_config = {
         "method": "random",
         "metric": {"name": "avg_loss", "goal": "minimize"},
@@ -192,5 +192,29 @@ def sweep():
     wandb.agent(sweep_id, sweep_train, count=200)
 
 
+def load_points(path: str):
+    points = np.load(path)
+    points_array = points["points"]
+    p_x = torch.from_numpy(points_array[:, 0]).requires_grad_()
+    p_y = torch.from_numpy(points_array[:, 1]).requires_grad_()
+    return p_x, p_y
+
+
+def train_further(path: str):
+    # sweep()
+    p_x, p_y = load_points(path)
+
+    # Use plot_points function instead of manual plotting
+    plot_points(p_x, p_y, show=True)
+    iterations = 100
+    lr = 0.1
+    lrs = [lr] * iterations
+    losses = optimize_points(p_x, p_y, ALPHA, W, H, lrs, iterations)
+    plot_losses(losses)
+    plot_lr_schedule(lrs)
+    print("Initial loss: ", losses[0])
+    print(f"Final loss: {losses[-1]}")
+
+
 if __name__ == "__main__":
-    sweep()
+    train_further("points/sweep_optimized_points_5613.0186.npz")
