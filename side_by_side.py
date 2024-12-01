@@ -19,8 +19,14 @@ paths = [
     "points/optimized_points_5612.9111.npz",
     "points/sweep_optimized_points_5613.0376.npz",
     "points/optimized_points_5613.1704.npz",
+    "points/optimized_points_5612.9180.npz",
 ]
-colors = ["#D72638", "#3B8EA5", "#3BB273"]  # More vibrant, visually contrasting colors
+colors = [
+    "#D72638",
+    "#3B8EA5",
+    "#3BB273",
+    "#F49F05",
+]  # Vibrant, visually contrasting colors
 
 # Calculate rows and columns for the layout
 n_cols = len(paths)  # Force a single-row layout for a cleaner presentation

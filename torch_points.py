@@ -20,7 +20,7 @@ def plot_points(p_x, p_y, loss=None, save=False, show=False, params=None):
     plt.xlabel("X")
     plt.ylabel("Y")
 
-    title = f"Point Packing (N={len(p_x)})"
+    title = "Point Packing"
     if loss is not None:
         title += f"\nLoss: {loss:.6f}"
     if params:
@@ -58,9 +58,8 @@ def plot_losses(losses, show_plateau=False):
     plt.yscale("log")
     plt.title("Loss Over Time")
     if show_plateau:
-        plt.ylim(
-            min(losses) - 2, min(losses) + 2
-        )  # Adjust y-axis to focus on the flat part
+        plt.ylim(min(losses) - 0.01, min(losses) + 0.01)
+
     plt.show()
 
 
@@ -84,7 +83,7 @@ def get_lrs(iterations: int, peak_lr: float, min_lr: float):
 
 
 def optimize_points(x, y, alpha, w, h, lrs: list[float], iterations: int):
-    optimizer = torch.optim.SGD([x, y])
+    optimizer = torch.optim.Adam([x, y])
     losses = []
 
     for i in range(iterations):
@@ -95,6 +94,10 @@ def optimize_points(x, y, alpha, w, h, lrs: list[float], iterations: int):
         loss = get_loss(x, y, alpha, w, h)
         losses.append(loss.item())
         loss.backward()
+
+        # Clip gradients to maximum norm of 1
+        torch.nn.utils.clip_grad_norm_([x, y], max_norm=1.0)
+
         optimizer.step()
 
         with torch.no_grad():
@@ -195,8 +198,8 @@ def sweep():
 def load_points(path: str):
     points = np.load(path)
     points_array = points["points"]
-    p_x = torch.from_numpy(points_array[:, 0]).requires_grad_()
-    p_y = torch.from_numpy(points_array[:, 1]).requires_grad_()
+    p_x = torch.from_numpy(points_array[:, 0])
+    p_y = torch.from_numpy(points_array[:, 1])
     return p_x, p_y
 
 
@@ -216,5 +219,34 @@ def train_further(path: str):
     print(f"Final loss: {losses[-1]}")
 
 
+def add_noise(p_x, p_y, noise_level):
+    noise = torch.randn_like(p_x) * noise_level
+    return p_x + noise, p_y + noise
+
+
+def find_other_solutions(path, noise_level=10, lr=0.1, iterations=100):
+    p_x, p_y = load_points(path)
+    loss = get_loss(p_x, p_y, ALPHA, W, H)
+    plot_points(p_x, p_y, show=True, loss=loss)
+    p_x, p_y = add_noise(p_x, p_y, noise_level)
+    loss = get_loss(p_x, p_y, ALPHA, W, H)
+    plot_points(p_x, p_y, show=True, loss=loss)
+    p_x = p_x.requires_grad_()
+    p_y = p_y.requires_grad_()
+    lrs = [lr] * iterations
+    losses = optimize_points(p_x, p_y, ALPHA, W, H, lrs, iterations)
+    plot_losses(losses, show_plateau=True)
+    plot_points(p_x, p_y, show=True, loss=losses[-1])
+    # save points
+    save_points(p_x, p_y, f"optimized_points_{losses[-1]:.4f}.npz")
+
+
 if __name__ == "__main__":
-    train_further("points/optimized_points_5612.9111.npz")
+    # seed
+    torch.manual_seed(42)
+    find_other_solutions(
+        "points/optimized_points_5612.9111.npz",
+        noise_level=8,
+        lr=1,
+        iterations=4000,
+    )
